@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { login } from '../store/authSlice';
-
-const positions = ['shift-left', 'shift-right', 'shift-bottom'];
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -14,9 +11,8 @@ const LoginForm = () => {
   const [buttonPos, setButtonPos] = useState('');
 
   const shiftButton = () => {
-    const currentIndex = positions.indexOf(buttonPos);
-    const nextIndex = (currentIndex + 1) % positions.length;
-    setButtonPos(positions[nextIndex]);
+    // Ví dụ đơn giản, có thể cải tiến sau
+    setButtonPos('shift');
   };
 
   const formik = useFormik({
@@ -27,23 +23,22 @@ const LoginForm = () => {
       password: Yup.string().required('Enter Password'),
     }),
     onSubmit: (values) => {
-      axios
-        .post('http://localhost:5001/api/login', values)
-        .then((response) => {
-          if (response.data.success) {
-            localStorage.setItem('token', response.data.token);
-            dispatch(login(response.data.token));
-            navigate('/patients');
-          } else {
-            alert('Thông tin đăng nhập không hợp lệ');
-            shiftButton();
-          }
-        })
-        .catch((error) => {
-          console.error('Error login', error);
-          alert('Wrong UserName Or Password');
-          shiftButton();
-        });
+      // Thay vì gọi API backend, ta kiểm tra thông tin đăng nhập trong localStorage
+      const storedUsers = localStorage.getItem('users');
+      const users = storedUsers ? JSON.parse(storedUsers) : [];
+      const userFound = users.find(
+        (user) =>
+          user.username === values.username && user.password === values.password
+      );
+      if (userFound) {
+        // Đăng nhập thành công: lưu token dummy, dispatch login và chuyển hướng
+        localStorage.setItem('token', 'dummy-token');
+        dispatch(login('dummy-token'));
+        navigate('/patients');
+      } else {
+        alert('Thông tin đăng nhập không hợp lệ');
+        shiftButton();
+      }
     },
   });
 
@@ -84,7 +79,7 @@ const LoginForm = () => {
               />
               <span className="absolute right-3 top-2 text-gray-400">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M16 7c0-2.761-2.239-5-5-5S6 4.239 6 7s2.239 5 5 5 5-2.239 5-5zM4 20c0-3 4-5 7-5s7 2 7 5v1H4v-1z" />
+                  <path d="M16 7c0-2.239-1.791-4-4-4s-4 1.761-4 4 1.791 4 4 4 4-1.761 4-4zM4 20c0-3 4-5 8-5s8 2 8 5v1H4v-1z" />
                 </svg>
               </span>
             </div>
@@ -122,15 +117,15 @@ const LoginForm = () => {
               <input type="checkbox" className="mr-1" />
               <span className="text-sm">Remember me</span>
             </label>
-            <a href="#!" className="text-sm hover:underline">
+            <Link to="/forgot-password" className="text-sm hover:underline">
               Forgot Password?
-            </a>
+            </Link>
           </div>
 
           <div className="flex justify-center">
             <button
               type="submit"
-              className={`bg-blue-500 text-white py-1 px-3 text-sm rounded hover:bg-blue-600 transition login-btn ${buttonPos}`}
+              className={`bg-blue-500 text-white py-1 px-3 text-sm rounded hover:bg-blue-600 transition ${buttonPos}`}
               onMouseEnter={() => {
                 if (!formik.isValid) {
                   shiftButton();
@@ -146,9 +141,9 @@ const LoginForm = () => {
         <div className="text-center mt-4">
           <p className="text-gray-400 text-sm">
             Don't have an account?{' '}
-            <a href="#!" className="text-blue-500 hover:underline">
+            <Link to="/register" className="text-blue-500 hover:underline">
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </div>
